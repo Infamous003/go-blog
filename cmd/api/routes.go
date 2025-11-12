@@ -12,6 +12,7 @@ func (app *application) routes() http.Handler {
 	r.Use(middleware.Logger)
 
 	r.Get("/healthcheck", app.healthcheckHandler)
+	r.Get("/posts/{id}", app.showPostHandler)
 
 	return r
 }

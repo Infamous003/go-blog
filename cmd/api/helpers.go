@@ -2,10 +2,23 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type envelope map[string]any
+
+func (app *application) readIDParam(r *http.Request) (int64, error) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 0)
+	if err != nil || id < 1 {
+		return 0, errors.New("invalid id parameter")
+	}
+
+	return id, nil
+}
 
 func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
