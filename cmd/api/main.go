@@ -2,13 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
-	"time"
-
-	"github.com/go-chi/chi/v5"
 )
 
 var version = "1.0.0"
@@ -37,22 +32,7 @@ func main() {
 		logger: logger,
 	}
 
-	r := chi.NewRouter()
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("What's up!"))
-	})
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.cfg.port),
-		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
-		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), slog.LevelError),
-	}
-
-	logger.Info("server starting", "addr", srv.Addr, "env", app.cfg.env)
-	if err := srv.ListenAndServe(); err != nil {
+	if err := app.serve(); err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
