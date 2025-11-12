@@ -8,7 +8,7 @@ import (
 func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		http.Error(w, "resource not found", http.StatusNotFound)
+		app.notfoundResponse(w, r)
 		return
 	}
 
@@ -34,7 +34,7 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 	headers.Set("Languages", "en,fr")
 	err = app.writeJSON(w, http.StatusOK, envelope{"post": p}, headers)
 	if err != nil {
-		http.Error(w, "something went wrong with the server", http.StatusInternalServerError)
+		app.serverErrorResponse(w, r)
 		return
 	}
 }
