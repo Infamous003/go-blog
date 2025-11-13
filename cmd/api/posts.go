@@ -38,3 +38,22 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
+
+func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title    string `json:"title"`
+		Subtitle string `json:"subtitle"`
+		Content  string `json:"content"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"post": input}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r)
+	}
+}
