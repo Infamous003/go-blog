@@ -14,6 +14,7 @@ type Post struct {
 	Content   string    `json:"content"`
 	Tags      []string  `json:"tags"`
 	Claps     int64     `json:"claps"`
+	Version   int64     `json:"version"`
 }
 
 func ValidatePost(v *validator.Validator, post *Post) {

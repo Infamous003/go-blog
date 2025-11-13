@@ -22,6 +22,7 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 		Subtitle:  "[Spoiler Alert] I'm Black, or am I?",
 		Content:   "uksvhj,nwskvjh,anmsfv  aj,sdvbkjg,vals",
 		Claps:     23,
+		Version:   1,
 	}
 
 	headers := make(http.Header)
@@ -55,6 +56,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Tags:      input.Tags,
 		Content:   input.Content,
 		Claps:     12,
+		Version:   1,
 	}
 
 	v := validator.New()
