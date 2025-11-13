@@ -74,7 +74,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 			}
 			return fmt.Errorf("body contains incorrect JSON type at character %d", unmarshalTypeError.Offset)
 
-		case errors.As(invalidUnmarshalError, &invalidUnmarshalError):
+		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
 
 		case errors.As(err, &maxBytesError):
