@@ -7,14 +7,18 @@ import (
 )
 
 type Post struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	Title     string    `json:"title"`
-	Subtitle  string    `json:"subtitle,omitzero"`
-	Content   string    `json:"content"`
-	Tags      []string  `json:"tags"`
-	Claps     int64     `json:"claps"`
-	Version   int64     `json:"version"`
+	ID          int64     `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Title       string    `json:"title"`
+	Subtitle    string    `json:"subtitle,omitzero"`
+	Content     string    `json:"content"`
+	Tags        []string  `json:"tags"`
+	Claps       int64     `json:"claps"`
+	Status      string    `json:"status"` // Draft or Published
+	PublishedAt time.Time `json:"published_at"`
+	Version     int64     `json:"version"`
+	Slug        string    `json:"slug"`
 }
 
 func ValidatePost(v *validator.Validator, post *Post) {

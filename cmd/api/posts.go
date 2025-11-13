@@ -18,9 +18,11 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 	p := data.Post{
 		ID:        id,
 		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 		Title:     "Why I am allowed to say the N word",
 		Subtitle:  "[Spoiler Alert] I'm Black, or am I?",
 		Content:   "uksvhj,nwskvjh,anmsfv  aj,sdvbkjg,vals",
+		Status:    "draft",
 		Claps:     23,
 		Version:   1,
 	}
