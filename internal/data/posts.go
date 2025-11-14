@@ -1,25 +1,28 @@
 package data
 
 import (
+	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/Infamous003/go-blog/internal/validator"
+	"github.com/lib/pq"
 )
 
 type Post struct {
-	ID          int64     `json:"id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Title       string    `json:"title"`
-	Subtitle    string    `json:"subtitle,omitzero"`
-	Content     string    `json:"content"`
-	Tags        []string  `json:"tags"`
-	Claps       int64     `json:"claps"`
-	Status      string    `json:"status"` // Draft or Published
-	PublishedAt time.Time `json:"published_at"`
-	Version     int64     `json:"version"`
-	Slug        string    `json:"slug"`
+	ID          int64      `json:"id"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	Title       string     `json:"title"`
+	Subtitle    string     `json:"subtitle,omitzero"`
+	Content     string     `json:"content"`
+	Tags        []string   `json:"tags"`
+	Claps       int64      `json:"claps"`
+	Status      string     `json:"status"`       // Draft or Published
+	PublishedAt *time.Time `json:"published_at"` // when it in null in the db, json response automatically fills the time as 0.000, and you don't want that, so keep it a pointer
+	Version     int64      `json:"version"`
+	Slug        string     `json:"slug"`
 }
 
 func ValidatePost(v *validator.Validator, post *Post) {
@@ -37,6 +40,12 @@ func ValidatePost(v *validator.Validator, post *Post) {
 	v.Check(len(post.Tags) <= 5, "tags", "must not contain more than 5 tags")
 }
 
+func (p *Post) GenerateSlug() {
+	// can use Split as well. Fields handles multiple spaces properly
+	words := strings.Fields(strings.ToLower(p.Title))
+	p.Slug = strings.Join(words, "-")
+}
+
 // Model representing Post, which contains a DB connection
 type PostModel struct {
 	DB *sql.DB
@@ -44,6 +53,35 @@ type PostModel struct {
 
 // Inserts a Post in the DB, returns an error if failed to do so
 func (m PostModel) Insert(post *Post) error {
+	query := `
+		INSERT INTO posts (title, subtitle, content, tags, slug)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at, updated_at, slug, claps, status, version
+	`
+	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&post.ID,
+		&post.CreatedAt,
+		&post.UpdatedAt,
+		&post.Slug,
+		&post.Claps,
+		&post.Status,
+		&post.Version,
+	)
+
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "posts_slug_key"`:
+			return ErrDuplicateSlug
+		default:
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -51,14 +52,10 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	post := &data.Post{
-		ID:        1,
-		CreatedAt: time.Now(),
-		Title:     input.Title,
-		Subtitle:  input.Subtitle,
-		Tags:      input.Tags,
-		Content:   input.Content,
-		Claps:     12,
-		Version:   1,
+		Title:    input.Title,
+		Subtitle: input.Subtitle,
+		Tags:     input.Tags,
+		Content:  input.Content,
 	}
 
 	v := validator.New()
@@ -66,6 +63,22 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	data.ValidatePost(v, post)
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	post.GenerateSlug()
+
+	err = app.models.Posts.Insert(post)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateSlug):
+			v.AddError("slug", "a post with this slug already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.logger.Error(err.Error())
+			app.serverErrorResponse(w, r)
+		}
 		return
 	}
 
