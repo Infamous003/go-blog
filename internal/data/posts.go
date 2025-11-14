@@ -1,6 +1,7 @@
 package data
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/Infamous003/go-blog/internal/validator"
@@ -34,4 +35,29 @@ func ValidatePost(v *validator.Validator, post *Post) {
 	v.Check(validator.Unique(post.Tags), "tags", "must not contain duplicate values")
 	v.Check(len(post.Tags) >= 1, "tags", "must contain atleast 1 tag")
 	v.Check(len(post.Tags) <= 5, "tags", "must not contain more than 5 tags")
+}
+
+// Model representing Post, which contains a DB connection
+type PostModel struct {
+	DB *sql.DB
+}
+
+// Inserts a Post in the DB, returns an error if failed to do so
+func (m PostModel) Insert(post *Post) error {
+	return nil
+}
+
+// Fetch a Post from the DB, returns an error if failed to do so
+func (m PostModel) Get(id int64) (*Post, error) {
+	return nil, nil
+}
+
+// Update a Post, returns an error if failed to do so
+func (m PostModel) Update(post *Post) error {
+	return nil
+}
+
+// Delete a Post from the DB
+func (m PostModel) Delete(id int64) error {
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Infamous003/go-blog/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -16,6 +17,7 @@ var version = "1.0.0"
 type application struct {
 	cfg    config
 	logger *slog.Logger
+	models data.Models
 }
 
 type config struct {
@@ -46,11 +48,6 @@ func main() {
 
 	flag.Parse()
 
-	app := application{
-		cfg:    cfg,
-		logger: logger,
-	}
-
 	db, err := OpenDB(cfg)
 	if err != nil {
 		logger.Error(err.Error())
@@ -59,6 +56,12 @@ func main() {
 	defer db.Close()
 
 	logger.Info("database connection pool established")
+
+	app := application{
+		cfg:    cfg,
+		logger: logger,
+		models: data.NewModels(db),
+	}
 
 	if err = app.serve(); err != nil {
 		logger.Error(err.Error())
