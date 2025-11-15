@@ -129,10 +129,48 @@ func (m PostModel) Get(id int64) (*Post, error) {
 
 // Update a Post, returns an error if failed to do so
 func (m PostModel) Update(post *Post) error {
+	query := `
+		UPDATE posts
+		SET title = $1, subtitle = $2, content = $3, tags = $4, slug = $5, version = version + 1
+		WHERE id = $6
+		RETURNING version
+	`
+	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug, post.ID}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&post.Version)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Delete a Post from the DB
 func (m PostModel) Delete(id int64) error {
+	query := `
+		DELETE FROM posts
+		WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	res, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
 	return nil
 }
