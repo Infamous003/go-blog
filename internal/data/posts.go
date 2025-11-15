@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"time"
 
@@ -88,7 +89,42 @@ func (m PostModel) Insert(post *Post) error {
 
 // Fetch a Post from the DB, returns an error if failed to do so
 func (m PostModel) Get(id int64) (*Post, error) {
-	return nil, nil
+	query := `
+		SELECT id, created_at, title, subtitle, content, tags, status, claps, slug, updated_at, published_at, version
+		FROM posts
+		WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var post Post
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&post.ID,
+		&post.CreatedAt,
+		&post.Title,
+		&post.Subtitle,
+		&post.Content,
+		pq.Array(&post.Tags),
+		&post.Status,
+		&post.Claps,
+		&post.Slug,
+		&post.UpdatedAt,
+		&post.PublishedAt,
+		&post.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &post, nil
 }
 
 // Update a Post, returns an error if failed to do so

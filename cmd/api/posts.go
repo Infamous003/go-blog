@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/Infamous003/go-blog/internal/data"
 	"github.com/Infamous003/go-blog/internal/validator"
@@ -16,21 +15,19 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	p := data.Post{
-		ID:        id,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Title:     "Why I am allowed to say the N word",
-		Subtitle:  "[Spoiler Alert] I'm Black, or am I?",
-		Content:   "uksvhj,nwskvjh,anmsfv  aj,sdvbkjg,vals",
-		Status:    "draft",
-		Claps:     23,
-		Version:   1,
+	post, err := app.models.Posts.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notfoundResponse(w, r)
+		default:
+			app.logger.Error(err.Error())
+			app.serverErrorResponse(w, r)
+		}
+		return
 	}
 
-	headers := make(http.Header)
-	headers.Set("Languages", "en,fr")
-	err = app.writeJSON(w, http.StatusOK, envelope{"post": p}, headers)
+	err = app.writeJSON(w, http.StatusOK, envelope{"post": post}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r)
 		return
