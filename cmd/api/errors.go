@@ -21,8 +21,9 @@ func (app *application) notfoundResponse(w http.ResponseWriter, r *http.Request)
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
 
-func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request) {
+func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	message := "the server encountered an error and could not process your request"
+	app.logError(r, err)
 	app.errorResponse(w, r, http.StatusInternalServerError, message)
 }
 

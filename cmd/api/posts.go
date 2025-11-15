@@ -21,15 +21,14 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notfoundResponse(w, r)
 		default:
-			app.logger.Error(err.Error())
-			app.serverErrorResponse(w, r)
+			app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"post": post}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
@@ -74,13 +73,13 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.logger.Error(err.Error())
-			app.serverErrorResponse(w, r)
+			app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"post": post}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r)
+		app.serverErrorResponse(w, r, err)
 	}
 }
