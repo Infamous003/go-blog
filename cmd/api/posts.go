@@ -103,9 +103,9 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	var input struct {
-		Title    string   `json:"title"`
-		Subtitle string   `json:"subtitle"`
-		Content  string   `json:"content"`
+		Title    *string  `json:"title"`
+		Subtitle *string  `json:"subtitle"`
+		Content  *string  `json:"content"`
 		Tags     []string `json:"tags"`
 	}
 
@@ -115,10 +115,19 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	post.Title = input.Title
-	post.Subtitle = input.Subtitle
-	post.Content = input.Content
-	post.Tags = input.Tags
+	// we are only updating the values that are not nil, the ones user provided
+	if input.Title != nil {
+		post.Title = *input.Title
+	}
+	if input.Subtitle != nil {
+		post.Subtitle = *input.Subtitle
+	}
+	if input.Content != nil {
+		post.Content = *input.Content
+	}
+	if input.Tags != nil {
+		post.Tags = input.Tags
+	}
 
 	v := validator.New()
 
