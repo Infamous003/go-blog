@@ -218,3 +218,30 @@ func (m PostModel) Publish(post *Post) error {
 
 	return nil
 }
+
+func (m PostModel) IncrementClap(id int64) error {
+	query := `
+		UPDATE posts
+		SET claps = claps + 1
+		WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}

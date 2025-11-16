@@ -17,6 +17,7 @@ func (app *application) routes() http.Handler {
 	r.Post("/posts/{id}/publish", app.publishPostHandler)
 	r.Patch("/posts/{id}", app.updatePostHandler)
 	r.Delete("/posts/{id}", app.deletePostHandler)
+	r.Post("/posts/{id}/clap", app.clapPostHandler)
 
 	return r
 }
