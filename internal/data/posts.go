@@ -190,3 +190,31 @@ func (m PostModel) Delete(id int64) error {
 
 	return nil
 }
+
+// Publishes a post, updating its status and published_at field
+func (m PostModel) Publish(post *Post) error {
+	query := `
+		UPDATE posts
+		SET status = 'published',
+			published_at = NOW(),
+			version = version + 1
+		WHERE id = $1 AND version = $2
+		RETURNING status, published_at, version
+	`
+	args := []any{post.ID, post.Version}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&post.Status, &post.PublishedAt, &post.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrRecordNotFound
+		default:
+			return err
+		}
+	}
+
+	return nil
+}

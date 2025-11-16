@@ -14,6 +14,7 @@ func (app *application) routes() http.Handler {
 	r.Get("/healthcheck", app.healthcheckHandler)
 	r.Get("/posts/{id}", app.showPostHandler)
 	r.Post("/posts", app.createPostHandler)
+	r.Post("/posts/{id}/publish", app.publishPostHandler)
 	r.Patch("/posts/{id}", app.updatePostHandler)
 	r.Delete("/posts/{id}", app.deletePostHandler)
 
