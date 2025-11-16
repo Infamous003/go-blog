@@ -131,18 +131,34 @@ func (m PostModel) Get(id int64) (*Post, error) {
 func (m PostModel) Update(post *Post) error {
 	query := `
 		UPDATE posts
-		SET title = $1, subtitle = $2, content = $3, tags = $4, slug = $5, version = version + 1
-		WHERE id = $6
+		SET title = $1,
+			subtitle = $2, 
+			content = $3, 
+			tags = $4, 
+			slug = $5, 
+			version = version + 1, 
+			updated_at = NOW()
+		WHERE 
+			id = $6 AND version = $7
 		RETURNING version
 	`
-	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug, post.ID}
+	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug, post.ID, post.Version}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&post.Version)
 	if err != nil {
-		return err
+		switch {
+		// if the version was changed, then you wont find the exact row, which means it was edited
+		// hence an edit conflict
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		case err.Error() == `pq: duplicate key value violates unique constraint "posts_slug_key"`:
+			return ErrDuplicateSlug
+		default:
+			return err
+		}
 	}
 
 	return nil

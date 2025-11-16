@@ -8,6 +8,7 @@ import (
 var (
 	ErrRecordNotFound = errors.New("record not found")
 	ErrDuplicateSlug  = errors.New("duplicate slug")
+	ErrEditConflict   = errors.New("edit conflict")
 )
 
 // A container representing all the models

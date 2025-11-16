@@ -115,6 +115,8 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	oldTitle := post.Title
+
 	// we are only updating the values that are not nil, the ones user provided
 	if input.Title != nil {
 		post.Title = *input.Title
@@ -129,6 +131,10 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		post.Tags = input.Tags
 	}
 
+	if input.Title != nil && post.Title != oldTitle {
+		post.GenerateSlug() // only generating the slug, if the title was changed
+	}
+
 	v := validator.New()
 
 	data.ValidatePost(v, post)
@@ -138,11 +144,17 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	post.GenerateSlug()
-
 	err = app.models.Posts.Update(post)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		case errors.Is(err, data.ErrDuplicateSlug):
+			v.AddError("slug", "a post with this slug already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
