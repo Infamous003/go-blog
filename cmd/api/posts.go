@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Infamous003/go-blog/internal/data"
@@ -30,6 +31,44 @@ func (app *application) showPostHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
+	}
+}
+
+func (app *application) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title   string
+		Tags    []string
+		Filters data.Filter
+	}
+
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	input.Title = app.readString(qs, "title", "")
+	input.Tags = app.readCSV(qs, "tags", []string{})
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 10, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	fmt.Println(input.Tags)
+
+	posts, err := app.models.Posts.GetAll(input.Title, input.Tags, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"posts": posts}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }
 

@@ -13,16 +13,16 @@ import (
 
 type Post struct {
 	ID          int64      `json:"id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	CreatedAt   time.Time  `json:"created_at,omitzero"`
+	UpdatedAt   time.Time  `json:"updated_at,omitzero"`
 	Title       string     `json:"title"`
 	Subtitle    string     `json:"subtitle,omitzero"`
 	Content     string     `json:"content"`
 	Tags        []string   `json:"tags"`
 	Claps       int64      `json:"claps"`
-	Status      string     `json:"status"`       // Draft or Published
-	PublishedAt *time.Time `json:"published_at"` // when it in null in the db, json response automatically fills the time as 0.000, and you don't want that, so keep it a pointer
-	Version     int64      `json:"version"`
+	Status      string     `json:"status,omitzero"` // Draft or Published
+	PublishedAt *time.Time `json:"published_at"`    // when it in null in the db, json response automatically fills the time as 0.000, and you don't want that, so keep it a pointer
+	Version     int64      `json:"version,omitzero"`
 	Slug        string     `json:"slug"`
 }
 
@@ -125,6 +125,61 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	}
 
 	return &post, nil
+}
+
+func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post, error) {
+	query := `
+		SELECT 
+			id,
+			slug,
+			title,
+			subtitle,
+			published_at,
+			tags,
+			claps
+		FROM posts
+		WHERE status = 'published' 
+		AND (LOWER(title) = LOWER($1) OR $1 = '')
+		AND (tags @> $2 OR $2 = '{}')
+		ORDER BY published_at DESC;
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(tags))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	posts := []*Post{}
+
+	for rows.Next() {
+		var post Post
+
+		err := rows.Scan(
+			&post.ID,
+			&post.Slug,
+			&post.Title,
+			&post.Subtitle,
+			&post.PublishedAt,
+			pq.Array(&post.Tags),
+			&post.Claps,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		posts = append(posts, &post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 // Update a Post, returns an error if failed to do so
