@@ -139,10 +139,37 @@ func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post,
 			claps
 		FROM posts
 		WHERE status = 'published' 
-		AND (LOWER(title) = LOWER($1) OR $1 = '')
-		AND (tags @> $2 OR $2 = '{}')
-		ORDER BY published_at DESC;
+			AND (search_vector @@ plainto_tsquery('english', $1) OR $1 = '')
+			AND (tags @> $2 OR $2 = '{}') 
+		ORDER BY
+			(CASE WHEN $1 = '' THEN 1 ELSE 0 END),  -- 0 = search mode, 1 = normal mode
+			ts_rank(search_vector, plainto_tsquery('english', $1)) DESC,
+			published_at DESC;
 	`
+
+	/*
+		Search behavior:
+		1. plainto_tsquery() turns the raw search string into a tsquery.
+		2. search_vector @@ tsquery matches posts based on weighted full-text search
+		(title = A, subtitle = B, content = C).
+		3. If the search string ($1) is empty, the full-text search filter is skipped.
+
+		Ordering behavior:
+		We use a CASE expression to switch between two sorting modes:
+
+		- When $1 = ''  → normal listing mode
+			* CASE returns 1
+			* ts_rank is ignored (all rows have rank 0 anyway)
+			* posts are ordered by published_at DESC
+
+		- When $1 != '' → search mode
+			* CASE returns 0
+			* rows are ordered primarily by ts_rank DESC (relevance)
+			* ties are broken using published_at DESC
+
+		This avoids mixing incompatible types in a CASE expression (timestamp vs real)
+		and cleanly falls back to date sorting when no search term is provided.
+	*/
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
