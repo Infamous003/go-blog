@@ -10,6 +10,7 @@ import (
 func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(app.rateLimiter)
 
 	r.Get("/healthcheck", app.healthcheckHandler)
 
