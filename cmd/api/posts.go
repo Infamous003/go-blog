@@ -49,7 +49,7 @@ func (app *application) ListPostsHandler(w http.ResponseWriter, r *http.Request)
 	input.Tags = app.readCSV(qs, "tags", []string{})
 
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
-	input.Filters.PageSize = app.readInt(qs, "page_size", 10, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 5, v)
 
 	data.ValidateFilters(v, input.Filters)
 
@@ -60,13 +60,13 @@ func (app *application) ListPostsHandler(w http.ResponseWriter, r *http.Request)
 
 	fmt.Println(input.Tags)
 
-	posts, err := app.models.Posts.GetAll(input.Title, input.Tags, input.Filters)
+	posts, metadata, err := app.models.Posts.GetAll(input.Title, input.Tags, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"posts": posts}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"posts": posts, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

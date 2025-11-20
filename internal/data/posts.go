@@ -127,9 +127,10 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	return &post, nil
 }
 
-func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post, error) {
+func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post, Metadata, error) {
 	query := `
 		SELECT 
+			count(*) OVER(),
 			id,
 			slug,
 			title,
@@ -144,7 +145,8 @@ func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post,
 		ORDER BY
 			(CASE WHEN $1 = '' THEN 1 ELSE 0 END),  -- 0 = search mode, 1 = normal mode
 			ts_rank(search_vector, plainto_tsquery('english', $1)) DESC,
-			published_at DESC;
+			published_at DESC
+		LIMIT $3 OFFSET $4
 	`
 
 	/*
@@ -174,18 +176,22 @@ func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post,
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(tags))
+	args := []any{title, pq.Array(tags), filters.limit(), filters.offset()}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	defer rows.Close()
 
 	posts := []*Post{}
+	totalRecords := 0
 
 	for rows.Next() {
 		var post Post
 
 		err := rows.Scan(
+			&totalRecords,
 			&post.ID,
 			&post.Slug,
 			&post.Title,
@@ -196,17 +202,19 @@ func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post,
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		posts = append(posts, &post)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return posts, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return posts, metadata, nil
 }
 
 // Update a Post, returns an error if failed to do so
