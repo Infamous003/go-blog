@@ -1,5 +1,11 @@
 package validator
 
+import "regexp"
+
+var (
+	EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+)
+
 // Validator contains a map of strings to strings representing errors
 type Validator struct {
 	Errors map[string]string
@@ -41,4 +47,9 @@ func Unique[T comparable](values []T) bool {
 	}
 
 	return len(uniqueValues) == len(values)
+}
+
+// Matches compares `value` against rx
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
