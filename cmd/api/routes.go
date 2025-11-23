@@ -26,5 +26,8 @@ func (app *application) routes() http.Handler {
 	r.Delete("/posts/{id}", app.deletePostHandler)
 	r.Post("/posts/{id}/clap", app.clapPostHandler)
 
+	// user endpoints
+	r.Post("/users", app.registerUserHandler)
+
 	return r
 }
