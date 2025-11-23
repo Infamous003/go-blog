@@ -12,6 +12,10 @@ func (app *application) routes() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(app.rateLimiter)
 
+	// custom error responses
+	r.MethodNotAllowed(app.methodNotAllowedResponse)
+	r.NotFound(app.notfoundResponse)
+
 	r.Get("/healthcheck", app.healthcheckHandler)
 
 	r.Get("/posts/{id}", app.showPostHandler)
