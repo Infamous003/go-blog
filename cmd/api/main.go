@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Infamous003/go-blog/internal/data"
@@ -20,6 +21,7 @@ type application struct {
 	logger *slog.Logger
 	models data.Models
 	mailer *mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 type config struct {

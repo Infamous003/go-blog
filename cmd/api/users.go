@@ -56,7 +56,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// sending mails in a separate go routine
+	app.wg.Add(1)
 	go func() {
+		defer app.wg.Done()
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
 		if err != nil {
 			app.logger.Error(err.Error())
