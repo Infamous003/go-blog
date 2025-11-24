@@ -1,0 +1,25 @@
+{{define "subject"}}Welcome to GoBlog!{{end}}
+
+{{define "plainBody"}}
+Hi, {{.Username}} Welcome to GoBlog. We're go glad to have you on board.
+
+Thanks,
+The GoBlog Team
+{{end}}
+
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <p>Hi, {{.Username}} Welcome to GoBlog. We're so glad to have you on board!</p>
+
+    <p>Thanks,</p>
+    <p>The GoBlog Team</p>
+</body>
+</html>
+{{end}}

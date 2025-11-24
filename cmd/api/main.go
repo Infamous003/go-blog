@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Infamous003/go-blog/internal/data"
+	"github.com/Infamous003/go-blog/internal/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -18,6 +19,7 @@ type application struct {
 	cfg    config
 	logger *slog.Logger
 	models data.Models
+	mailer *mailer.Mailer
 }
 
 type config struct {
@@ -36,6 +38,14 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 func main() {
@@ -52,9 +62,17 @@ func main() {
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 10*time.Minute, "PostgreSQL max connection idle time")
 
+	// Rate limiter configurations
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enavle rate limiter")
+
+	// SMTP configurations
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "f630c32bda4ae0", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "1a5080739869a2", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Magic Elves <from@example.com>", "SMTP sender")
 
 	flag.Parse()
 
@@ -67,10 +85,17 @@ func main() {
 
 	logger.Info("database connection pool established")
 
+	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := application{
 		cfg:    cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer,
 	}
 
 	if err = app.serve(); err != nil {
