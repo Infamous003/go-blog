@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/Infamous003/go-blog/internal/data"
 	"github.com/Infamous003/go-blog/internal/validator"
@@ -55,11 +56,23 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// sending mails in a separate go routine
 	app.wg.Add(1)
 	go func() {
 		defer app.wg.Done()
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+
+		data := map[string]any{
+			"activationToken": token.Plaintext,
+			"username":        user.Username,
+		}
+
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
 			app.logger.Error(err.Error())
 		}

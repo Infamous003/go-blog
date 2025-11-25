@@ -13,14 +13,16 @@ var (
 
 // A container representing all the models
 type Models struct {
-	Posts PostModel
-	Users UserModel
+	Posts  PostModel
+	Users  UserModel
+	Tokens TokenModel
 }
 
 // Returns a Models struct which contains all the models initialized with a DB
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Posts: PostModel{DB: db},
-		Users: UserModel{DB: db},
+		Posts:  PostModel{DB: db},
+		Users:  UserModel{DB: db},
+		Tokens: TokenModel{DB: db},
 	}
 }

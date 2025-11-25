@@ -1,7 +1,13 @@
 {{define "subject"}}Welcome to GoBlog!{{end}}
 
 {{define "plainBody"}}
-Hi, {{.Username}} Welcome to GoBlog. We're go glad to have you on board.
+Hi, {{.username}} Welcome to GoBlog. We're go glad to have you on board.
+
+To activate your account, please send a request to the <code>PUT /users/activated</code> endpoint with the following JSON body:
+
+{"token": "{{.activationToken}}"}
+
+Please note that this is a one-time user token and it will expire in 24 hours
 
 Thanks,
 The GoBlog Team
@@ -16,7 +22,17 @@ The GoBlog Team
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <p>Hi, {{.Username}} Welcome to GoBlog. We're so glad to have you on board!</p>
+    <p>Hi, {{.username}} Welcome to GoBlog. We're so glad to have you on board!</p>
+
+    <p>To activate your account, please send a request to the <code>PUT /users/activated</code> endpoint with the following JSON body:</p>
+
+    <pre>
+    <code>
+        {"token": "{{.activationToken}}"}
+    </code>
+    </pre>
+
+    <p>Please note that this is a one-time user token and it will expire in 24 hours</p>
 
     <p>Thanks,</p>
     <p>The GoBlog Team</p>
