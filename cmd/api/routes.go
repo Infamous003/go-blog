@@ -9,8 +9,10 @@ import (
 
 func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
+
 	r.Use(middleware.Logger)
 	r.Use(app.rateLimiter)
+	r.Use(app.authenticate)
 
 	// custom error responses
 	r.MethodNotAllowed(app.methodNotAllowedResponse)
@@ -32,6 +34,5 @@ func (app *application) routes() http.Handler {
 	r.Put("/users/activated", app.activateUserHandler)
 
 	r.Post("/tokens/authentication", app.createAuthenticationTokenHandler)
-
 	return r
 }
