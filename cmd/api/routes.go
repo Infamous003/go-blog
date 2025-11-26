@@ -20,13 +20,15 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/healthcheck", app.healthcheckHandler)
 
-	r.Get("/posts/{id}", app.showPostHandler)
-	r.Get("/posts", app.ListPostsHandler)
-	r.Post("/posts", app.createPostHandler)
-	r.Post("/posts/{id}/publish", app.publishPostHandler)
-	r.Patch("/posts/{id}", app.updatePostHandler)
-	r.Delete("/posts/{id}", app.deletePostHandler)
-	r.Post("/posts/{id}/clap", app.clapPostHandler)
+	r.Get("/posts/{id}", app.requireActivatedUser(app.showPostHandler))
+	r.Get("/posts", app.requireActivatedUser(app.ListPostsHandler))
+
+	r.Post("/posts", app.requireActivatedUser(app.createPostHandler))
+	r.Post("/posts/{id}/publish", app.requireActivatedUser(app.publishPostHandler))
+	r.Post("/posts/{id}/clap", app.requireActivatedUser(app.clapPostHandler))
+
+	r.Patch("/posts/{id}", app.requireActivatedUser(app.updatePostHandler))
+	r.Delete("/posts/{id}", app.requireActivatedUser(app.deletePostHandler))
 
 	// user endpoints
 	r.Post("/users", app.registerUserHandler)
