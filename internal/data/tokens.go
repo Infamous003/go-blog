@@ -11,15 +11,16 @@ import (
 )
 
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
 )
 
 type Token struct {
-	Plaintext string // the token sent in the email, not in DB
-	Hash      []byte // hash of the plaintext which is stored in DB
-	UserID    int64
-	Expiry    time.Time
-	Scope     string // activation, authentication, etc
+	Plaintext string    `json:"token"` // the token sent in the email, not in DB
+	Hash      []byte    `json:"-"`     // hash of the plaintext which is stored in DB
+	UserID    int64     `json:"-"`
+	Expiry    time.Time `json:"expiry"`
+	Scope     string    `json:"-"` // activation, authentication, etc
 }
 
 func generateToken(userID int64, ttl time.Duration, scope string) *Token {
