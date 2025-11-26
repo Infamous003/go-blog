@@ -36,6 +36,7 @@ func generateToken(userID int64, ttl time.Duration, scope string) *Token {
 	return token
 }
 
+// checks whether tokenPlaintext is empty or of not correct length
 func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(tokenPlaintext != "", "token", "must be provided")
 	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long")
@@ -70,7 +71,7 @@ func (m TokenModel) Insert(token *Token) error {
 func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
 	query := `
 		DELETE FROM tokens
-		WHERE scope = $1 AND userID = $2
+		WHERE scope = $1 AND user_id = $2
 	`
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

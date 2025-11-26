@@ -29,5 +29,7 @@ func (app *application) routes() http.Handler {
 	// user endpoints
 	r.Post("/users", app.registerUserHandler)
 
+	r.Put("/users/activated", app.activateUserHandler)
+
 	return r
 }
