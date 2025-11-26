@@ -139,7 +139,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) getProfileHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(UserContextKey).(*data.User)
+	user := app.contextGetUser(r)
 
 	if user.IsAnonymous() {
 		app.authenticationRequiredResponse(w, r)
