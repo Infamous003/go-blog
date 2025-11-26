@@ -137,3 +137,17 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) getProfileHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(UserContextKey).(*data.User)
+
+	if user.IsAnonymous() {
+		app.authenticationRequiredResponse(w, r)
+		return
+	}
+
+	err := app.writeJSON(w, http.StatusOK, envelope{"profile": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
