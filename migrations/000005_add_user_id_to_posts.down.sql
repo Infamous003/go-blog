@@ -1,0 +1,7 @@
+DROP INDEX IF EXISTS idx_posts_user_id;
+
+ALTER TABLE posts
+DROP CONSTRAINT IF EXISTS posts_user_id_fk;
+
+ALTER TABLE posts
+DROP COLUMN IF EXISTS user_id;
