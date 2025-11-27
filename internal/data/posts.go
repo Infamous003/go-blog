@@ -15,6 +15,7 @@ type Post struct {
 	ID          int64      `json:"id"`
 	CreatedAt   time.Time  `json:"created_at,omitzero"`
 	UpdatedAt   time.Time  `json:"updated_at,omitzero"`
+	UserID      int64      `json:"user_id"`
 	Title       string     `json:"title"`
 	Subtitle    string     `json:"subtitle,omitzero"`
 	Content     string     `json:"content"`
@@ -56,11 +57,18 @@ type PostModel struct {
 // Inserts a Post in the DB, returns an error if failed to do so
 func (m PostModel) Insert(post *Post) error {
 	query := `
-		INSERT INTO posts (title, subtitle, content, tags, slug)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO posts (title, subtitle, content, tags, slug, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, updated_at, slug, claps, status, version
 	`
-	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug}
+	args := []any{
+		post.Title,
+		post.Subtitle,
+		post.Content,
+		pq.Array(post.Tags),
+		post.Slug,
+		post.UserID,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -90,7 +98,7 @@ func (m PostModel) Insert(post *Post) error {
 // Fetch a Post from the DB, returns an error if failed to do so
 func (m PostModel) Get(id int64) (*Post, error) {
 	query := `
-		SELECT id, created_at, title, subtitle, content, tags, status, claps, slug, updated_at, published_at, version
+		SELECT id, created_at, user_id, title, subtitle, content, tags, status, claps, slug, updated_at, published_at, version
 		FROM posts
 		WHERE id = $1
 	`
@@ -103,6 +111,7 @@ func (m PostModel) Get(id int64) (*Post, error) {
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
 		&post.CreatedAt,
+		&post.UserID,
 		&post.Title,
 		&post.Subtitle,
 		&post.Content,
@@ -218,7 +227,7 @@ func (m PostModel) GetAll(title string, tags []string, filters Filter) ([]*Post,
 }
 
 // Update a Post, returns an error if failed to do so
-func (m PostModel) Update(post *Post) error {
+func (m PostModel) Update(post *Post, userID int64) error {
 	query := `
 		UPDATE posts
 		SET title = $1,
@@ -229,10 +238,19 @@ func (m PostModel) Update(post *Post) error {
 			version = version + 1, 
 			updated_at = NOW()
 		WHERE 
-			id = $6 AND version = $7
+			id = $6 AND version = $7 AND user_id = $8
 		RETURNING version
 	`
-	args := []any{post.Title, post.Subtitle, post.Content, pq.Array(post.Tags), post.Slug, post.ID, post.Version}
+	args := []any{
+		post.Title,
+		post.Subtitle,
+		post.Content,
+		pq.Array(post.Tags),
+		post.Slug,
+		post.ID,
+		post.Version,
+		post.UserID,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -288,10 +306,10 @@ func (m PostModel) Publish(post *Post) error {
 		SET status = 'published',
 			published_at = NOW(),
 			version = version + 1
-		WHERE id = $1 AND version = $2
+		WHERE id = $1 AND version = $2 AND user_id = $3
 		RETURNING status, published_at, version
 	`
-	args := []any{post.ID, post.Version}
+	args := []any{post.ID, post.Version, post.UserID}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

@@ -73,6 +73,8 @@ func (app *application) ListPostsHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
 	var input struct {
 		Title    string   `json:"title"`
 		Subtitle string   `json:"subtitle"`
@@ -91,6 +93,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Subtitle: input.Subtitle,
 		Tags:     input.Tags,
 		Content:  input.Content,
+		UserID:   user.ID,
 	}
 
 	v := validator.New()
@@ -141,6 +144,12 @@ func (app *application) publishPostHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	user := app.contextGetUser(r)
+	if post.UserID != user.ID {
+		app.notPermittedResponse(w, r)
+		return
+	}
+
 	if post.Status == "published" {
 		app.resourceConflictResponse(w, r, "post is already published")
 		return
@@ -178,6 +187,11 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
+	}
+	user := app.contextGetUser(r)
+	if post.UserID != user.ID {
+		app.notPermittedResponse(w, r)
 		return
 	}
 
@@ -223,7 +237,7 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.Posts.Update(post)
+	err = app.models.Posts.Update(post, user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
