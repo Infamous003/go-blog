@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS comments (
+    id bigserial PRIMARY KEY,
+    created_at TIMESTAMPTZ(0) NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT NOW(),
+    
+    body TEXT NOT NULL,
+
+    post_id BIGINT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
