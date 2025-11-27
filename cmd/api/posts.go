@@ -302,4 +302,7 @@ func (app *application) clapPostHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "successfully clapped the post"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
