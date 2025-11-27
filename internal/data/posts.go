@@ -255,16 +255,16 @@ func (m PostModel) Update(post *Post) error {
 }
 
 // Delete a Post from the DB
-func (m PostModel) Delete(id int64) error {
+func (m PostModel) Delete(id int64, userID int64) error {
 	query := `
 		DELETE FROM posts
-		WHERE id = $1
+		WHERE id = $1 AND user_id = $2
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	res, err := m.DB.ExecContext(ctx, query, id)
+	res, err := m.DB.ExecContext(ctx, query, id, userID)
 	if err != nil {
 		return err
 	}

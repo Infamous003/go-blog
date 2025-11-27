@@ -244,13 +244,15 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
 	id, err := app.readIDParam(r)
 	if err != nil {
 		app.notfoundResponse(w, r)
 		return
 	}
 
-	err = app.models.Posts.Delete(id)
+	err = app.models.Posts.Delete(id, user.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
