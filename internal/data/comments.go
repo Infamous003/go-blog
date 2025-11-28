@@ -51,3 +51,51 @@ func (m CommentModel) Insert(comment *Comment) error {
 		&comment.Version,
 	)
 }
+
+func (m CommentModel) GetForPost(postID int64, filters *Filter) ([]*Comment, Metadata, error) {
+	query := `
+		SELECT count(*) over(), id, body, user_id, post_id, created_at, updated_at 
+		FROM comments
+		WHERE post_id = $1
+		ORDER BY id
+		LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, postID, filters.limit(), filters.offset())
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	defer rows.Close()
+
+	comments := []*Comment{}
+	totalRecords := 0
+
+	for rows.Next() {
+		var c Comment
+
+		err := rows.Scan(
+			&totalRecords,
+			&c.ID,
+			&c.Body,
+			&c.UserID,
+			&c.PostID,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+		comments = append(comments, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return comments, metadata, err
+}

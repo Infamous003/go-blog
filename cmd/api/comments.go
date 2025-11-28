@@ -62,3 +62,45 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) listCommentsForPostHandler(w http.ResponseWriter, r *http.Request) {
+	postID, err := app.readIDParam(r)
+	if err != nil {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Filters data.Filter
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 2, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	_, err = app.models.Posts.Get(postID)
+	if err != nil {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	comments, metadata, err := app.models.Comments.GetForPost(postID, &input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"metadata": metadata, "comments": comments}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
