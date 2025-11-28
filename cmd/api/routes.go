@@ -20,27 +20,38 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/healthcheck", app.healthcheckHandler)
 
-	r.Get("/posts/{id}", app.requireActivatedUser(app.showPostHandler))
-	r.Get("/posts", app.requireActivatedUser(app.ListPostsHandler))
+	// USERS endpoints
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/", app.registerUserHandler)
+		r.Put("/activated", app.activateUserHandler)
+		r.Get("/me", app.getProfileHandler)
+	})
 
-	r.Post("/posts", app.requireActivatedUser(app.createPostHandler))
-	r.Post("/posts/{id}/publish", app.requireActivatedUser(app.publishPostHandler))
-	r.Post("/posts/{id}/clap", app.requireActivatedUser(app.clapPostHandler))
+	// TOKENS endpoints
+	r.Route("/tokens", func(r chi.Router) {
+		r.Post("/authentication", app.createAuthenticationTokenHandler)
+	})
 
-	r.Patch("/posts/{id}", app.requireActivatedUser(app.updatePostHandler))
-	r.Delete("/posts/{id}", app.requireActivatedUser(app.deletePostHandler))
+	// POSTS endpoints
+	r.Route("/posts", func(r chi.Router) {
+		r.Post("/", app.requireActivatedUser(app.createPostHandler))
+		r.Get("/", app.requireActivatedUser(app.ListPostsHandler))
 
-	// user endpoints
-	r.Post("/users", app.registerUserHandler)
-	r.Get("/users/me", app.getProfileHandler)
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", app.requireActivatedUser(app.showPostHandler))
+			r.Patch("/", app.requireActivatedUser(app.updatePostHandler))
+			r.Delete("/", app.requireActivatedUser(app.deletePostHandler))
 
-	r.Put("/users/activated", app.activateUserHandler)
+			r.Post("/publish", app.requireActivatedUser(app.publishPostHandler))
+			r.Post("/clap", app.requireActivatedUser(app.clapPostHandler))
 
-	r.Post("/tokens/authentication", app.createAuthenticationTokenHandler)
-
-	r.Post("/posts/{id}/comments", app.requireActivatedUser(app.createCommentHandler))
-	r.Get("/posts/{id}/comments", app.requireActivatedUser(app.listCommentsForPostHandler))
-	r.Delete("/posts/{id}/comments/{comment_id}", app.requireActivatedUser(app.deleteCommentHandler))
+			r.Route("/comments", func(r chi.Router) {
+				r.Post("/", app.requireActivatedUser(app.createCommentHandler))
+				r.Get("/", app.requireActivatedUser(app.listCommentsForPostHandler))
+				r.Delete("/{comment_id}", app.requireActivatedUser(app.deleteCommentHandler))
+			})
+		})
+	})
 
 	return r
 }
