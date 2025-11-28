@@ -37,5 +37,8 @@ func (app *application) routes() http.Handler {
 	r.Put("/users/activated", app.activateUserHandler)
 
 	r.Post("/tokens/authentication", app.createAuthenticationTokenHandler)
+
+	r.Post("/posts/{id}/comments", app.requireActivatedUser(app.createCommentHandler))
+
 	return r
 }
