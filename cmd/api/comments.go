@@ -3,9 +3,11 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Infamous003/go-blog/internal/data"
 	"github.com/Infamous003/go-blog/internal/validator"
+	"github.com/go-chi/chi/v5"
 )
 
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -100,6 +102,38 @@ func (app *application) listCommentsForPostHandler(w http.ResponseWriter, r *htt
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"metadata": metadata, "comments": comments}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Request) {
+	commentID, err := strconv.ParseInt(chi.URLParam(r, "comment_id"), 10, 0)
+	if err != nil || commentID < 1 {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	user := app.contextGetUser(r)
+
+	postID, err := app.readIDParam(r)
+	if err != nil {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Comments.Delete(commentID, user.ID, postID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notfoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "successfully deleted the comment"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

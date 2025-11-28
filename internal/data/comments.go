@@ -99,3 +99,28 @@ func (m CommentModel) GetForPost(postID int64, filters *Filter) ([]*Comment, Met
 
 	return comments, metadata, err
 }
+
+func (m CommentModel) Delete(commentID, userID, postID int64) error {
+	query := `
+		DELETE FROM comments
+		WHERE id = $1 AND user_id = $2 AND post_id = $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	res, err := m.DB.ExecContext(ctx, query, commentID, userID, postID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}

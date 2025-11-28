@@ -40,5 +40,7 @@ func (app *application) routes() http.Handler {
 
 	r.Post("/posts/{id}/comments", app.requireActivatedUser(app.createCommentHandler))
 	r.Get("/posts/{id}/comments", app.requireActivatedUser(app.listCommentsForPostHandler))
+	r.Delete("/posts/{id}/comments/{comment_id}", app.requireActivatedUser(app.deleteCommentHandler))
+
 	return r
 }
