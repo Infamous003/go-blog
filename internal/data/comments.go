@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/Infamous003/go-blog/internal/validator"
@@ -123,4 +124,79 @@ func (m CommentModel) Delete(commentID, userID, postID int64) error {
 	}
 
 	return nil
+}
+
+func (m CommentModel) Update(comment *Comment) error {
+	query := `
+		UPDATE comments
+		SET 
+		body = $1,
+		updated_at = now(),
+		version = version + 1
+		WHERE id = $2 
+		AND user_id = $3 
+		AND post_id = $4 
+		AND version = $5
+		RETURNING updated_at, version
+	`
+
+	args := []any{
+		comment.Body,
+		comment.ID,
+		comment.UserID,
+		comment.PostID,
+		comment.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&comment.UpdatedAt,
+		&comment.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m CommentModel) Get(commentID int64) (*Comment, error) {
+	query := `
+		SELECT id, body, user_id, post_id, created_at, updated_at, version
+		FROM comments
+		WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var comment Comment
+
+	err := m.DB.QueryRowContext(ctx, query, commentID).Scan(
+		&comment.ID,
+		&comment.Body,
+		&comment.UserID,
+		&comment.PostID,
+		&comment.CreatedAt,
+		&comment.UpdatedAt,
+		&comment.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &comment, nil
 }

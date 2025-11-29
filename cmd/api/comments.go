@@ -138,3 +138,68 @@ func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Requ
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateCommentHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Body string `json:"body"`
+	}
+
+	if err := app.readJSON(w, r, &input); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	commentID, err := strconv.ParseInt(chi.URLParam(r, "comment_id"), 10, 0)
+	if err != nil || commentID < 1 {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	user := app.contextGetUser(r)
+
+	postID, err := app.readIDParam(r)
+	if err != nil {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	comment, err := app.models.Comments.Get(commentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notfoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if comment.UserID != user.ID || comment.PostID != postID {
+		app.notfoundResponse(w, r)
+		return
+	}
+
+	comment.Body = input.Body
+
+	v := validator.New()
+	if data.ValidateComment(v, comment); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Comments.Update(comment)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"comment": comment}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

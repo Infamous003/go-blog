@@ -49,6 +49,7 @@ func (app *application) routes() http.Handler {
 				r.Post("/", app.requireActivatedUser(app.createCommentHandler))
 				r.Get("/", app.requireActivatedUser(app.listCommentsForPostHandler))
 				r.Delete("/{comment_id}", app.requireActivatedUser(app.deleteCommentHandler))
+				r.Patch("/{comment_id}", app.requireActivatedUser(app.updateCommentHandler))
 			})
 		})
 	})
