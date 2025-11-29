@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,6 +11,7 @@ import (
 func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(app.metrics)
 	r.Use(middleware.Logger)
 	r.Use(app.rateLimiter)
 	r.Use(app.authenticate)
@@ -19,6 +21,8 @@ func (app *application) routes() http.Handler {
 	r.NotFound(app.notfoundResponse)
 
 	r.Get("/healthcheck", app.healthcheckHandler)
+
+	r.Handle("/metrics", expvar.Handler())
 
 	// USERS endpoints
 	r.Route("/users", func(r chi.Router) {
