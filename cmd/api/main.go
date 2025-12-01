@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -76,7 +77,13 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "1a5080739869a2", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Magic Elves <from@example.com>", "SMTP sender")
 
+	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		os.Exit(0)
+	}
 
 	db, err := OpenDB(cfg)
 	if err != nil {

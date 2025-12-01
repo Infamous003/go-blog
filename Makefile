@@ -15,6 +15,12 @@ confirm:
 run/api:
 	@go run ./cmd/api -db-dsn=${GOBLOG_DSN}
 
+.PHONY: build/api
+build/api:
+	@echo "Building binaries..."
+	GOOS=windows GOARCH=amd64 go build -ldflags='-s' -o ./bin/api.exe ./cmd/api
+	GOOS=linux   GOARCH=amd64 go build -ldflags='-s' -o ./bin/api     ./cmd/api
+
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
@@ -31,3 +37,20 @@ db/migrations/new:
 db/migrations/up: confirm
 	@echo 'Running up migrations...'
 	migrate -path=./migrations -database=${GOBLOG_DSN} up
+
+## db/migrations/down: apply down migrations
+.PHONY: db/migrations/down
+db/migrations/down: confirm
+	@echo 'Applying down migration by ${num}...'
+	migrate -path=./migrations -database=${GOBLOG_DSN} down ${num}
+
+.PHOY: tidy
+tidy:
+	@echo 'Tidying module dependencies...'
+	go mod tidy
+	@echo 'Verifying and vendoring module dependencies...'
+	go mod verify
+	go mod vendor
+	@echo 'Formatting .go files...'
+	go fmt ./...
+
