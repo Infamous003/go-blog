@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"expvar"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/Infamous003/go-blog/internal/data"
 	"github.com/Infamous003/go-blog/internal/validator"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
@@ -142,23 +142,55 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 	return app.requireAuthenticatedUser(fn)
 }
 
-func (app *application) metrics(next http.Handler) http.Handler {
-	var (
-		totalRequestsReceived           = expvar.NewInt("total_requests_received")
-		totalResponsesSent              = expvar.NewInt("total_responses_sent")
-		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
-	)
+// func (app *application) metrics(next http.Handler) http.Handler {
+// 	var (
+// 		totalRequestsReceived           = expvar.NewInt("total_requests_received")
+// 		totalResponsesSent              = expvar.NewInt("total_responses_sent")
+// 		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
+// 	)
 
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		start := time.Now()
+
+// 		totalRequestsReceived.Add(1)
+
+// 		next.ServeHTTP(w, r)
+
+// 		totalResponsesSent.Add(1)
+
+// 		duration := time.Since(start).Microseconds()
+// 		totalProcessingTimeMicroseconds.Add(duration)
+// 	})
+// }
+
+// this struct wraps http.ResponseWriter
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func (app *application) metrics(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		totalRequestsReceived.Add(1)
+		rw := statusRecorder{ResponseWriter: w, status: 200}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(&rw, r)
 
-		totalResponsesSent.Add(1)
+		requestsTotal.With(prometheus.Labels{
+			"method": r.Method,
+			"path":   r.URL.Path,
+			"status": fmt.Sprint(rw.status),
+		}).Inc()
 
-		duration := time.Since(start).Microseconds()
-		totalProcessingTimeMicroseconds.Add(duration)
+		requestDuration.With(prometheus.Labels{
+			"method": r.Method,
+			"path":   r.URL.Path,
+		}).Observe(float64(time.Since(start).Seconds()))
 	})
 }

@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"database/sql"
-	"expvar"
 	"flag"
 	"log/slog"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 
@@ -95,23 +93,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// publishing the version
-	expvar.NewString("version").Set(version)
-
-	// publishing the no. of go routines
-	expvar.Publish("goroutines", expvar.Func(func() any {
-		return runtime.NumGoroutine()
-	}))
-
-	// publishing db stats
-	expvar.Publish("database", expvar.Func(func() any {
-		return db.Stats()
-	}))
-
-	// publishing the current time stamp in Unix format
-	expvar.Publish("timestamp", expvar.Func(func() any {
-		return time.Now().Unix()
-	}))
+	SetBuildInfo(version, time.Now().String(), cfg.env)
 
 	app := application{
 		cfg:    cfg,

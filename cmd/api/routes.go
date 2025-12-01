@@ -1,11 +1,12 @@
 package main
 
 import (
-	"expvar"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (app *application) routes() http.Handler {
@@ -22,7 +23,7 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/healthcheck", app.healthcheckHandler)
 
-	r.Handle("/metrics", expvar.Handler())
+	r.Handle("/metrics", promhttp.Handler())
 
 	// USERS endpoints
 	r.Route("/users", func(r chi.Router) {
