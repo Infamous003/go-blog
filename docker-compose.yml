@@ -1,0 +1,47 @@
+services:
+  postgres:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    image: postgres:17
+    container_name: goblog-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: goblog
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  
+  migrator:
+    image: migrate/migrate:4
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path=/migrations",
+      "-database=postgres://postgres:password123@postgres:5432/goblog?sslmode=disable",
+      "up"
+    ]
+    restart: "on-failure"
+  
+  api:
+    build: .
+    container_name: go-blog
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GOBLOG_DSN: "postgres://postgres:password123@postgres:5432/goblog?sslmode=disable"
+    ports:
+      - "9090:9090"
+
+volumes:
+  postgres_data:
