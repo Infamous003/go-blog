@@ -1,6 +1,6 @@
 # Go Blog
 
-A production-grade blogging platform built with Go and Chi router. It has features like auth, full-text search, prometheus metrics, email activation, rate limiting, etc
+A production-grade blogging platform built with Go and Chi router. It has features like auth, full-text search, prometheus metrics, email activation, rate limiting, etc. It also features a simple CI workflow that builds the binary, dockerfile and docker compose.
 
 ![Architecture Diagram](./images/diagram.jpg)
 
@@ -88,8 +88,10 @@ All authenticated routes require a valid token and an activated account.
 * **Go**
 * **Chi Router**
 * **PostgreSQL**
+* **Go Migrate**
 * **Prometheus**
 * **Docker & Docker Compose**
+* **GitHub Actions**
 
 ---
 
