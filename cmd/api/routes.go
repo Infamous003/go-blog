@@ -30,6 +30,7 @@ func (app *application) routes() http.Handler {
 		r.Post("/", app.registerUserHandler)
 		r.Put("/activated", app.activateUserHandler)
 		r.Get("/me", app.getProfileHandler)
+		r.Patch("/", app.requireActivatedUser(app.updateProfileHandler))
 	})
 
 	// TOKENS endpoints

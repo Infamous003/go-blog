@@ -151,3 +151,65 @@ func (app *application) getProfileHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	if user.IsAnonymous() {
+		app.authenticationRequiredResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Username *string `json:"username"`
+		Email    *string `json:"email"`
+		Password *string `json:"password"`
+	}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.Username != nil {
+		user.Username = *input.Username
+	}
+	if input.Email != nil {
+		user.Email = *input.Email
+	}
+	if input.Password != nil {
+		err = user.Password.Set(*input.Password)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	v := validator.New()
+	if data.ValidateUser(v, user); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateEmail):
+			v.AddError("email", "a user with this email already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrDuplicateUsername):
+			v.AddError("username", "a user with this username already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"profile": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
