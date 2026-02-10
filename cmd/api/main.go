@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -71,11 +72,11 @@ func main() {
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enavle rate limiter")
 
 	// SMTP configurations
-	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "SMTP port")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", "f630c32bda4ae0", "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", "1a5080739869a2", "SMTP password")
-	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Magic Elves <from@example.com>", "SMTP sender")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", getEnv("SMTP_HOST", "sandbox.smtp.mailtrap.io"), "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", getEnvInt("SMTP_PORT", 2525), "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME"), "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASSWORD"), "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", getEnv("SMTP_SENDER", "Magic Elves <from@example.com>"), "SMTP sender")
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.Parse()
@@ -136,4 +137,21 @@ func OpenDB(cfg config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if v := os.Getenv(key); v != "" {
+		i, err := strconv.Atoi(v)
+		if err == nil {
+			return i
+		}
+	}
+	return fallback
 }
