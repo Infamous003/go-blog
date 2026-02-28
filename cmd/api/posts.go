@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/Infamous003/go-blog/internal/data"
@@ -57,8 +56,6 @@ func (app *application) ListPostsHandler(w http.ResponseWriter, r *http.Request)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
-
-	fmt.Println(input.Tags)
 
 	posts, metadata, err := app.models.Posts.GetAll(input.Title, input.Tags, input.Filters)
 	if err != nil {
