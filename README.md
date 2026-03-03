@@ -2,9 +2,32 @@
 
 A production-grade blogging platform built with Go and Chi router. It has features like auth, full-text search, prometheus metrics, email activation, rate limiting, etc. It also features a simple CI workflow that builds the binary, dockerfile and docker compose.
 
+## API Documentation (Postman)
+Interactive API documentation is available through Postman:
+
+**[View GoBlog API Collection](https://www.postman.com/just-me-3110/workspace/goblog-workspace/request/40067502-63d84985-e85d-44b9-8e7c-5aca9ab02224?action=share&creator=40067502)**
+
+The collection includes:
+- Authentication flow (register → activate → login)
+- Full CRUD for posts
+- Publishing workflow
+- Comment management
+- Pagination & filtering examples
+- Health check endpoint
+
+You can fork the collection or import it directly into Postman to test against the deployed API.
+
+## Base URL
+`https://go-blog-wrxl.onrender.com/`
+
+## Healthcheck
+`https://go-blog-wrxl.onrender.com/healthcheck`
+
+
+## Architecture
+
 ![Architecture Diagram](./images/diagram.jpg)
 
----
 
 ## Features
 
