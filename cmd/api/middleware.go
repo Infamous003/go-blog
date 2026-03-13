@@ -69,10 +69,6 @@ func (app *application) rateLimiter(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// this header indicates to any caches that responses may vary based on the value
-		// of the Authorization header in the request
-		w.Header().Add("Vary", "Authorization")
-
 		authorizationHeader := r.Header.Get("Authorization")
 
 		// if no auth header is provided, we set the request with an anonymous user
@@ -99,7 +95,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		user, err := app.models.Users.GetForToken(data.ScopeAuthentication, token)
 		if err != nil {
-			fmt.Println(err)
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
 				app.invalidAuthenticationTokenResponse(w, r)
@@ -141,27 +136,6 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 
 	return app.requireAuthenticatedUser(fn)
 }
-
-// func (app *application) metrics(next http.Handler) http.Handler {
-// 	var (
-// 		totalRequestsReceived           = expvar.NewInt("total_requests_received")
-// 		totalResponsesSent              = expvar.NewInt("total_responses_sent")
-// 		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
-// 	)
-
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		start := time.Now()
-
-// 		totalRequestsReceived.Add(1)
-
-// 		next.ServeHTTP(w, r)
-
-// 		totalResponsesSent.Add(1)
-
-// 		duration := time.Since(start).Microseconds()
-// 		totalProcessingTimeMicroseconds.Add(duration)
-// 	})
-// }
 
 // this struct wraps http.ResponseWriter
 type statusRecorder struct {
