@@ -5,6 +5,10 @@ A production-grade blogging platform built with Go and Chi router. It has featur
 ## API Documentation (Postman)
 Interactive API documentation is available through Postman:
 
+Test user credentials(both accounts are activated):
+1. username: `infamous03` password: `password123`   email: `infamous@gmail.com`
+2. username: `mehdi123`   password: `password123`   email: `mehdi@gmail.com`
+
 **[View GoBlog API Collection](https://www.postman.com/just-me-3110/workspace/goblog-workspace/request/40067502-63d84985-e85d-44b9-8e7c-5aca9ab02224?action=share&creator=40067502)**
 
 The collection includes:
